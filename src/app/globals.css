@@ -1,0 +1,304 @@
+@import "tailwindcss";
+
+/* ============================================================
+   TOKENS — charte graphique V1 §04
+   Un seul attribut sur le conteneur, et toute la page bascule
+   dans l'univers du contenu : <main data-u="agora">
+   ============================================================ */
+
+:root {
+  /* Neutres — ne changent jamais. Ils tirent vers le bleu-violet :
+     ils restent neutres à côté des six accents sans en réchauffer un. */
+  --noir: #0b0b0c;
+  --surface: #141418;
+  --surface-2: #1c1c22;
+  --ligne: #2c2c34;
+  --gris: #9b9ba6;
+  --blanc: #f5f5f3;
+
+  /* Accents d'univers */
+  --arcade: #a3ff3d;
+  --encre: #ff4a3d;
+  --pop: #ffc53d;
+  --agora: #5b8dff;
+  --bpm: #c05cff;
+  --objectif: #3de0ff;
+
+  /* Valeurs pilotées par l'univers courant. Par défaut : Arcade. */
+  --accent: var(--arcade);
+  --signature: var(--font-press-start), monospace;
+  --teinte: color-mix(in srgb, var(--accent) 13%, var(--noir));
+}
+
+[data-u="arcade"] {
+  --accent: var(--arcade);
+  --signature: var(--font-press-start), monospace;
+}
+[data-u="encre"] {
+  --accent: var(--encre);
+  --signature: var(--font-reggae-one), sans-serif;
+}
+[data-u="pop"] {
+  --accent: var(--pop);
+  --signature: var(--font-bungee), sans-serif;
+}
+[data-u="agora"] {
+  --accent: var(--agora);
+  --signature: var(--font-instrument-serif), serif;
+}
+[data-u="bpm"] {
+  --accent: var(--bpm);
+  --signature: var(--font-anton), sans-serif;
+}
+[data-u="objectif"] {
+  --accent: var(--objectif);
+  --signature: var(--font-dm-mono), monospace;
+}
+
+[data-u] {
+  --teinte: color-mix(in srgb, var(--accent) 13%, var(--noir));
+}
+
+/* Expose les tokens à Tailwind v4 : bg-noir, text-accent, border-ligne… */
+@theme inline {
+  --color-noir: var(--noir);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ligne: var(--ligne);
+  --color-gris: var(--gris);
+  --color-blanc: var(--blanc);
+  --color-accent: var(--accent);
+  --color-teinte: var(--teinte);
+
+  /* Les six accents nommés, pour les rares cas où il faut désigner un
+     univers précis hors de son contexte (pastilles, legendes, alertes). */
+  --color-arcade: var(--arcade);
+  --color-encre: var(--encre);
+  --color-pop: var(--pop);
+  --color-agora: var(--agora);
+  --color-bpm: var(--bpm);
+  --color-objectif: var(--objectif);
+
+  --font-corps: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-titre: var(--font-archivo-black), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --font-signature: var(--signature);
+}
+
+/* ============================================================
+   SOCLE
+   ============================================================ */
+
+* {
+  min-width: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  background: var(--noir);
+  color: var(--blanc);
+  font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--noir);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ============================================================
+   CLASSES DE MARQUE — charte V1, usage.css
+   ============================================================ */
+
+/* « TALAREF » se pose en JetBrains Mono capitales, interlettrage 0.34em.
+   Il ne prend JAMAIS la couleur d'accent : blanc, toujours. */
+.mot-talaref {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.34em;
+  color: var(--blanc);
+}
+
+/* Le mot d'univers, en police de signature et en couleur d'accent. */
+.mot-univers {
+  font-family: var(--signature);
+  color: var(--accent);
+  line-height: 1;
+}
+
+/* La pastille de code à trois lettres. */
+.pastille-code {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--noir);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-weight: 700;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+}
+
+/* Étiquette de service : dates, durées, crédits, numéros. */
+.etiquette {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gris);
+}
+
+.titre-article {
+  font-family: var(--font-archivo-black), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+/* ============================================================
+   CORPS D'ARTICLE — colonne unique, 65 caractères de large.
+   L'accent ne sert plus qu'aux liens, aux encadrés, à la barre de
+   progression et au badge d'univers. Retour au dosage 80/15/5.
+   ============================================================ */
+
+.corps-article {
+  max-width: 65ch;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+
+.corps-article a {
+  color: var(--accent);
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}
+
+.corps-article strong {
+  font-weight: 600;
+  color: var(--blanc);
+}
+
+/* ============================================================
+   TEXTURES D'UNIVERS — la texture passe derrière l'image,
+   jamais par-dessus le texte.
+   ============================================================ */
+
+.texture {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.15;
+}
+
+/* ARCADE — grille de pixels 22 px + scanlines horizontales. */
+[data-u="arcade"] .texture {
+  background-image:
+    linear-gradient(var(--accent) 1px, transparent 1px),
+    linear-gradient(90deg, var(--accent) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* ENCRE — trame de demi-teintes 7 px et lignes de vitesse à 118°. */
+[data-u="encre"] .texture {
+  background-image: repeating-linear-gradient(
+    118deg,
+    var(--accent) 0 1px,
+    transparent 1px 7px
+  );
+}
+
+/* POP — bandes diagonales à 45° et trame pointillée.
+   Seul univers où deux textures peuvent se superposer. */
+[data-u="pop"] .texture {
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      var(--accent) 0 10px,
+      transparent 10px 24px
+    ),
+    radial-gradient(var(--accent) 1px, transparent 1px);
+  background-size: auto, 12px 12px;
+}
+
+/* AGORA — quadrillage fin de 44 px, filets et colonnes.
+   Aucune texture organique, aucun effet lumineux, jamais de glitch. */
+[data-u="agora"] .texture {
+  background-image:
+    linear-gradient(var(--accent) 1px, transparent 1px),
+    linear-gradient(90deg, var(--accent) 1px, transparent 1px);
+  background-size: 44px 44px;
+  opacity: 0.1;
+}
+
+/* BPM — halo lumineux montant du bas + barres de waveform. */
+[data-u="bpm"] .texture {
+  background-image:
+    linear-gradient(to top, var(--accent) 0%, transparent 60%),
+    repeating-linear-gradient(
+      90deg,
+      var(--accent) 0 3px,
+      transparent 3px 11px
+    );
+  background-size: auto, auto 40%;
+  background-position: bottom, bottom;
+  background-repeat: no-repeat, repeat-x;
+}
+
+/* OBJECTIF — grille de tiers et repères de recadrage. */
+[data-u="objectif"] .texture {
+  background-image:
+    linear-gradient(var(--accent) 1px, transparent 1px),
+    linear-gradient(90deg, var(--accent) 1px, transparent 1px);
+  background-size: 33.333% 33.333%;
+  opacity: 0.2;
+}
+
+/* ============================================================
+   HOME — six couleurs sur un même écran, c'est beaucoup.
+   On les contient : filet de 3 px en haut de chaque carte,
+   pastille de code, et rien d'autre. Le fond reste noir.
+   ============================================================ */
+
+.carte-home {
+  background: var(--surface);
+  border-top: 3px solid var(--accent);
+  transition:
+    background-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.carte-home:hover {
+  background: var(--teinte);
+}

@@ -1,0 +1,219 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { getALireAussi, getArticle, getArticles } from "@/lib/content";
+import { getRubrique, getUnivers } from "@/lib/univers";
+import { SITE, dureeISO, formaterDate, formaterDuree, urlAbsolue } from "@/lib/site";
+import { RenduBlocs } from "@/components/blocs";
+import { BarreProgression } from "@/components/barre-progression";
+import { PastilleCode } from "@/components/pastille-code";
+
+type Params = { univers: string; slug: string };
+
+export async function generateStaticParams() {
+  const articles = await getArticles();
+  return articles.map((a) => ({ univers: a.univers, slug: a.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<Params>;
+}): Promise<Metadata> {
+  const { univers: uSlug, slug } = await params;
+  const article = await getArticle(uSlug, slug);
+  if (!article) return {};
+
+  const url = `/${article.univers}/${article.slug}`;
+
+  return {
+    title: article.titre,
+    // Le chapô fait office de méta-description : 200 à 320 signes, calibré
+    // pour ne pas être tronqué dans les résultats de recherche.
+    description: article.chapo,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      title: article.titre,
+      description: article.chapo,
+      url,
+      publishedTime: article.publieLe,
+      modifiedTime: article.misAJourLe,
+      authors: article.auteurs.map((a) => a.nom),
+    },
+  };
+}
+
+/**
+ * La page d'article : faire lire.
+ *
+ * Colonne unique, 65 caractères de large. Retour au dosage 80/15/5 :
+ * l'accent ne sert plus qu'aux liens, aux encadrés, à la barre de
+ * progression et au badge d'univers. La vidéo est un module DANS
+ * l'article, placé avant le premier intertitre — elle n'a pas de page
+ * à elle, et c'est ce qui garantit qu'aucun contenu Talaref ne se fait
+ * concurrence à lui-même dans les résultats de recherche.
+ */
+export default async function PageArticle({
+  params,
+}: {
+  params: Promise<Params>;
+}) {
+  const { univers: uSlug, slug } = await params;
+  const article = await getArticle(uSlug, slug);
+  if (!article) notFound();
+
+  const univers = getUnivers(article.univers);
+  if (!univers) notFound();
+
+  const rubrique = getRubrique(article.univers, article.rubrique);
+  const aLireAussi = await getALireAussi(article);
+  const url = urlAbsolue(`/${article.univers}/${article.slug}`);
+
+  /* Deux descriptions structurées sur la MÊME page : Google peut afficher
+     la vignette vidéo dans ses résultats tout en indexant le texte. C'est
+     le gain principal de l'architecture retenue. */
+  const donneesStructurees = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: article.titre,
+      description: article.chapo,
+      datePublished: article.publieLe,
+      dateModified: article.misAJourLe ?? article.publieLe,
+      author: article.auteurs.map((a) => ({
+        "@type": "Person",
+        name: a.nom,
+        url: urlAbsolue(`/auteurs/${a.slug}`),
+      })),
+      publisher: { "@type": "Organization", name: SITE.nomComplet },
+      mainEntityOfPage: url,
+      articleSection: rubrique?.nom ?? article.rubrique,
+      inLanguage: SITE.langue,
+    },
+    ...(article.video
+      ? [
+          {
+            "@context": "https://schema.org",
+            "@type": "VideoObject",
+            name: article.video.titre,
+            description: article.chapo,
+            uploadDate: article.video.misEnLigneLe,
+            duration: dureeISO(article.video.duree),
+            thumbnailUrl: `https://i.ytimg.com/vi/${article.video.youtubeId}/maxresdefault.jpg`,
+            embedUrl: `https://www.youtube-nocookie.com/embed/${article.video.youtubeId}`,
+            contentUrl: `https://www.youtube.com/watch?v=${article.video.youtubeId}`,
+          },
+        ]
+      : []),
+  ];
+
+  return (
+    <main data-u={univers.slug}>
+      <BarreProgression />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(donneesStructurees) }}
+      />
+
+      <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
+        <nav aria-label="Fil d'Ariane" className="etiquette mb-6">
+          <Link href={`/${univers.slug}`} className="hover:text-accent">
+            {univers.nom}
+          </Link>
+          {rubrique ? (
+            <>
+              <span aria-hidden="true"> / </span>
+              <Link
+                href={`/${univers.slug}/r/${rubrique.slug}`}
+                className="hover:text-accent"
+              >
+                {rubrique.nom}
+              </Link>
+            </>
+          ) : null}
+        </nav>
+
+        <header className="mb-10">
+          <PastilleCode univers={univers} />
+          <h1 className="titre-article mt-5 text-balance text-3xl sm:text-5xl">
+            {article.titre}
+          </h1>
+
+          <p className="etiquette mt-6 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span>
+              Par{" "}
+              {article.auteurs.map((a, i) => (
+                <span key={a.slug}>
+                  {i > 0 ? ", " : ""}
+                  <Link
+                    href={`/auteurs/${a.slug}`}
+                    className="text-blanc hover:text-accent"
+                  >
+                    {a.nom}
+                  </Link>
+                </span>
+              ))}
+            </span>
+            <span aria-hidden="true">·</span>
+            <time dateTime={article.publieLe}>
+              {formaterDate(article.publieLe)}
+            </time>
+            <span aria-hidden="true">·</span>
+            <span>{formaterDuree(article.tempsDeLecture)}</span>
+          </p>
+
+          {/* Affiché seulement si l'écart dépasse 30 jours. */}
+          {article.misAJourLe &&
+          Date.parse(article.misAJourLe) - Date.parse(article.publieLe) >
+            30 * 24 * 3600 * 1000 ? (
+            <p className="etiquette mt-1">
+              Mis à jour le {formaterDate(article.misAJourLe)}
+            </p>
+          ) : null}
+        </header>
+
+        <p className="mb-10 border-l-2 border-ligne pl-5 text-xl leading-relaxed text-gris">
+          {article.chapo}
+        </p>
+
+        <figure className="mb-10">
+          <div
+            className="relative aspect-video w-full overflow-hidden bg-surface-2"
+            role="img"
+            aria-label={article.imageDeUne.alt}
+          >
+            <div className="texture" aria-hidden="true" />
+          </div>
+          <figcaption className="etiquette mt-2">
+            {article.imageDeUne.credit}
+          </figcaption>
+        </figure>
+
+        <div className="corps-article">
+          <RenduBlocs blocs={article.corps} aLireAussi={aLireAussi} />
+        </div>
+
+        {article.tags.length > 0 ? (
+          <footer className="mt-12 border-t border-ligne pt-6">
+            <p className="etiquette">Sujets</p>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {article.tags.map((t) => (
+                <li key={t.slug}>
+                  <Link
+                    href={`/tag/${t.slug}`}
+                    className="block border border-ligne px-3 py-1.5 text-sm text-gris transition-colors hover:border-accent hover:text-accent"
+                  >
+                    {t.nom}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </footer>
+        ) : null}
+      </article>
+    </main>
+  );
+}
