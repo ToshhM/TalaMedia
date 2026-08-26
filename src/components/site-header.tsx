@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LogoTalaref } from "./logo-talaref";
 import { UNIVERS } from "@/lib/univers";
+import { UserMenu } from "./user-menu";
 
 /**
  * En-tête du site. Les six univers sont des liens réels, pas un menu
@@ -29,7 +30,7 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-2">
           <Link
             href="/videos"
             className="hidden rounded-sm px-2.5 py-1.5 text-sm text-gris transition-colors hover:text-blanc sm:block"
@@ -42,6 +43,7 @@ export function SiteHeader() {
           >
             Rechercher
           </Link>
+          <UserMenu />
         </div>
       </div>
     </header>
