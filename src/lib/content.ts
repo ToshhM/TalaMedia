@@ -2,17 +2,19 @@ import "server-only";
 
 import type { Article, Personne } from "./types";
 import { ARTICLES_DEMO, PERSONNES_DEMO } from "./sample-data";
+import { supabase } from "./supabase";
 
 /**
  * Couche d'accès au contenu.
  *
  * Tout le site passe par ces fonctions et par elles seules. Aucune page
- * n'interroge le CMS directement : le jour où la source change, il n'y a
+ * n'interroge directement la base : le jour où la source change, il n'y a
  * qu'un fichier à reprendre.
  *
- * Tant que NEXT_PUBLIC_SANITY_PROJECT_ID est vide, on sert les données de
- * démonstration — le site tourne dès le premier `npm run dev`, sans
- * compte Sanity.
+ * Priorités d'accès au contenu :
+ * 1. Supabase (si configuré et si la table contient des articles)
+ * 2. Sanity (si NEXT_PUBLIC_SANITY_PROJECT_ID est configuré)
+ * 3. Données de démonstration (sample-data.ts) en repli
  */
 
 const SANITY_ACTIF = Boolean(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID);
@@ -24,15 +26,42 @@ function trierParDate(articles: Article[]): Article[] {
 }
 
 async function tousLesArticles(): Promise<Article[]> {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("articles")
+        .select("*")
+        .order("publie_le", { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        return data.map((item) => ({
+          slug: item.slug,
+          titre: item.titre,
+          chapo: item.chapo,
+          imageDeUne: item.image_de_une,
+          univers: item.univers,
+          rubrique: item.rubrique,
+          tags: item.tags || [],
+          auteurs: item.auteurs || [],
+          video: item.video || undefined,
+          corps: item.corps || [],
+          publieLe: item.publie_le,
+          misAJourLe: item.mis_a_jour_le || undefined,
+          tempsDeLecture: item.temps_de_lecture,
+        }));
+      }
+    } catch {
+      // En cas d'erreur de connexion Supabase ou de table absente, repli gracieux
+    }
+  }
+
   if (SANITY_ACTIF) {
-    // TODO — brancher la requête GROQ ici (voir sanity/schemas).
-    // Le jeton de lecture reste côté serveur : ce fichier est marqué
-    // "server-only", il ne peut pas partir dans le navigateur.
     throw new Error(
       "Sanity est configuré mais la requête GROQ n'est pas encore écrite. " +
         "Vider NEXT_PUBLIC_SANITY_PROJECT_ID pour revenir aux données de démonstration.",
     );
   }
+
   return trierParDate(ARTICLES_DEMO);
 }
 
@@ -105,6 +134,27 @@ export async function getALireAussi(article: Article): Promise<Article[]> {
 }
 
 export async function getPersonnes(): Promise<Personne[]> {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("personnes")
+        .select("*")
+        .order("nom");
+
+      if (!error && data && data.length > 0) {
+        return data.map((item) => ({
+          slug: item.slug,
+          nom: item.nom,
+          bio: item.bio || undefined,
+          photo: item.photo || undefined,
+          liens: item.liens || [],
+        }));
+      }
+    } catch {
+      // Repli gracieux
+    }
+  }
+
   if (SANITY_ACTIF) {
     throw new Error("Requête GROQ des personnes non encore écrite.");
   }
