@@ -18,6 +18,12 @@ export default function ConnexionPage() {
     setErreur(null);
 
     const supabase = createClient();
+    if (!supabase) {
+      setErreur("Configuration Supabase manquante. Veuillez vérifier les variables d'environnement.");
+      setChargement(false);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,

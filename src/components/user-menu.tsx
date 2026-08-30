@@ -10,9 +10,10 @@ export function UserMenu() {
 
   useEffect(() => {
     const supabase = createClient();
+    if (!supabase) return;
 
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user ?? null);
+      setUser(data?.user ?? null);
     });
 
     const {

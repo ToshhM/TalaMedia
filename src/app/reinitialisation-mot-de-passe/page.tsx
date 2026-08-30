@@ -17,6 +17,12 @@ export default function ReinitialisationMotDePassePage() {
     setErreur(null);
 
     const supabase = createClient();
+    if (!supabase) {
+      setErreur("Configuration Supabase manquante. Veuillez vérifier les variables d'environnement.");
+      setChargement(false);
+      return;
+    }
+
     const { error } = await supabase.auth.updateUser({
       password,
     });

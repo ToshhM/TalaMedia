@@ -13,11 +13,16 @@ export default function ComptePage() {
 
   useEffect(() => {
     const supabase = createClient();
+    if (!supabase) {
+      setChargement(false);
+      return;
+    }
 
+    const client = supabase;
     async function getUser() {
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await client.auth.getUser();
 
       if (!user) {
         router.push("/connexion");
@@ -32,7 +37,9 @@ export default function ComptePage() {
 
   const handleDeconnexion = async () => {
     const supabase = createClient();
-    await supabase.auth.signOut();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     router.push("/");
     router.refresh();
   };
