@@ -14,21 +14,26 @@ export async function createClient() {
     return null;
   }
 
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
+  try {
+    return createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // In Server Components, cookies cannot be mutated directly
+          }
+        },
       },
-      setAll(cookiesToSet) {
-        try {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
-        } catch {
-          // In Server Components, cookies cannot be mutated directly
-        }
-      },
-    },
-  });
+    });
+  } catch (error) {
+    console.warn("Supabase server client failed to initialize:", error);
+    return null;
+  }
 }
 

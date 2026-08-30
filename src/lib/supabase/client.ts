@@ -11,6 +11,11 @@ export function createClient() {
     return null;
   }
 
-  return createBrowserClient(supabaseUrl, supabaseAnonKey);
+  try {
+    return createBrowserClient(supabaseUrl, supabaseAnonKey);
+  } catch (error) {
+    console.warn("Supabase browser client failed to initialize:", error);
+    return null;
+  }
 }
 
